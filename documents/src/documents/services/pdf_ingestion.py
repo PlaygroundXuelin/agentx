@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 from typing import Final
 from uuid import uuid4
@@ -10,10 +9,9 @@ from uuid import uuid4
 import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 from fastapi import UploadFile
-from llama_index.llms.openai import OpenAI
+from pypdf import PdfReader
 
 from documents.schemas import DocumentPayload
-from documents.services.docling_pdf_pipeline import DoclingPdfPipeline, PdfChunk
 from documents.services.indexing_service import DocumentIndexService
 from documents.services.settings import DocumentSettings
 
@@ -67,15 +65,9 @@ def process_pdf_for_indexing(
 ) -> None:
     """Extract content from the PDF and index it with the provided service."""
 
-    try:
-        pipeline = _get_docling_pipeline(document_settings)
-        chunks = pipeline.process(file_path)
-    except Exception as exc:  # pragma: no cover - defensive logging
-        LOGGER.exception("Failed to parse PDF %s: %s", file_path, exc)
-        return
-
-    if not chunks:
-        LOGGER.warning("Docling returned no content for %s", file_path)
+    extracted_text = extract_text_from_pdf(file_path)
+    if not extracted_text:
+        LOGGER.warning("No text extracted from %s", file_path)
         return
 
     metadata_base = {
@@ -85,72 +77,41 @@ def process_pdf_for_indexing(
         metadata_base["original_filename"] = original_filename
 
     payloads = [
-        _chunk_to_payload(
+        DocumentPayload(
             document_id=document_id,
-            index=index,
-            chunk=chunk,
-            metadata_base=metadata_base,
+            content=extracted_text,
+            metadata=metadata_base,
         )
-        for index, chunk in enumerate(chunks)
     ]
 
     try:
         service.index_documents(payloads)
         LOGGER.info(
-            "Indexed PDF document %s from %s with %d chunks",
+            "Indexed PDF document %s from %s",
             document_id,
             file_path,
-            len(payloads),
         )
     except Exception as exc:  # pragma: no cover - defensive logging
         LOGGER.exception("Failed to index document %s: %s", document_id, exc)
 
 
-def _chunk_to_payload(
-    *,
-    document_id: str,
-    index: int,
-    chunk: PdfChunk,
-    metadata_base: dict[str, str],
-) -> DocumentPayload:
-    metadata = dict(chunk.metadata or {})
-    metadata.update(metadata_base)
-    metadata["parent_document_id"] = document_id
-    metadata["chunk_index"] = index
-    metadata["chunk_summary"] = chunk.summary
-    metadata["images"] = list(chunk.images)
-    if chunk.embedding:
-        metadata["embedding"] = chunk.embedding
+def extract_text_from_pdf(file_path: Path) -> str:
+    """Extract plain text from a PDF file."""
 
-    chunk_document_id = f"{document_id}::chunk-{index:04d}"
-    return DocumentPayload(
-        document_id=chunk_document_id,
-        content=chunk.text,
-        metadata=metadata,
-    )
+    try:
+        reader = PdfReader(str(file_path))
+    except Exception as exc:  # pragma: no cover - defensive logging
+        LOGGER.exception("Failed to read PDF %s: %s", file_path, exc)
+        return ""
 
+    chunks: list[str] = []
+    for page in reader.pages:
+        try:
+            text = page.extract_text() or ""
+        except Exception as exc:  # pragma: no cover - defensive logging
+            LOGGER.warning("Failed to extract text from page in %s: %s", file_path, exc)
+            continue
+        if text:
+            chunks.append(text)
 
-def _get_docling_pipeline(settings: DocumentSettings) -> DoclingPdfPipeline:
-    return _cached_pipeline(
-        summary_model=settings.summary_model_name,
-        embedding_model=settings.embed.model_name,
-    )
-
-
-def _build_summary_llm(model_name: str):
-    if model_name.startswith("openai/"):
-        return OpenAI(model=model_name.split("/", 1)[1])
-    raise ValueError(f"Unsupported summary model '{model_name}'")
-
-
-@lru_cache(maxsize=2)
-def _cached_pipeline(
-    *,
-    summary_model: str,
-    embedding_model: str,
-) -> DoclingPdfPipeline:
-    return DoclingPdfPipeline(
-        summary_llm=_build_summary_llm(summary_model),
-        sentence_transformer=embedding_model,
-        include_images=True,
-    )
+    return "\n".join(chunks).strip()

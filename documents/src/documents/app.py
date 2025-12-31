@@ -9,9 +9,10 @@ from typing import Final, TypeVar
 import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 import uvicorn
-from core import configure_logging, configure_tracing
 from core.cmd_utils import load_app_settings
+from core.logging import configure_logging
 from core.settings import CoreSettings
+from core.telemetry import configure_tracing
 from fastapi import FastAPI
 
 from documents.dependencies import configure_document_dependencies
@@ -32,7 +33,10 @@ class AppSettings(CoreSettings):
     port: int = 8080
 
 
-def create_app(settings: AppSettings) -> FastAPI:
+def create_app(settings: AppSettings | None = None) -> FastAPI:
+    if settings is None:
+        settings = AppSettings()
+
     app = FastAPI(
         title=settings.title,
         description=settings.description,

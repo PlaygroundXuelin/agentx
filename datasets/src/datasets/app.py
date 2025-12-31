@@ -5,15 +5,15 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import os
-from typing import Any, Final
+from typing import Annotated, Any, Final
 from uuid import UUID
 
 import httpx
 import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 import uvicorn
-from core import configure_logging
 from core.cmd_utils import load_app_settings
+from core.logging import configure_logging
 from core.settings import CoreSettings
 from fastapi import (
     APIRouter,
@@ -199,8 +199,8 @@ def register_routes(app: FastAPI, settings: AppSettings, store: FsStore) -> None
         status_code=status.HTTP_201_CREATED,
     )
     async def upload_file(
-        dataset_id: UUID = Form(...),
-        file: UploadFile = File(...),
+        dataset_id: Annotated[UUID, Form(...)],
+        file: Annotated[UploadFile, File(...)],
     ) -> UploadDatasetResponse:
         if not store.dataset_dir_exists(dataset_id):
             raise HTTPException(

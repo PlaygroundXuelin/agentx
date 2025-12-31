@@ -5,8 +5,8 @@ import dataclasses
 
 import pydantic.dataclasses as pydantic_dataclasses
 import uvicorn
-from core import configure_logging
 from core.cmd_utils import load_app_settings
+from core.logging import configure_logging
 from core.settings import CoreSettings
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware

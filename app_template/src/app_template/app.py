@@ -9,8 +9,8 @@ from typing import Final
 import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 import uvicorn
-from core import configure_logging
 from core.cmd_utils import load_app_settings
+from core.logging import configure_logging
 from core.settings import CoreSettings
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
