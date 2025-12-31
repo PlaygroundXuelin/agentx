@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 
+import pydantic.dataclasses as pydantic_dataclasses
+import uvicorn
+from core import configure_logging
+from core.cmd_utils import load_app_settings
+from core.settings import CoreSettings
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
@@ -9,12 +15,7 @@ from sse_starlette import EventSourceResponse, JSONServerSentEvent
 
 from app_api.schemas import QueryRequest, QueryResponse, StreamError
 from app_api.services.rag import full_answer, stream_answer
-from core import configure_logging
-from core.cmd_utils import load_app_settings
-import pydantic.dataclasses as pydantic_dataclasses
-import dataclasses
-from core.settings import CoreSettings
-import uvicorn
+
 
 @pydantic_dataclasses.dataclass(frozen=True)
 class AppSettings(CoreSettings):
@@ -120,7 +121,6 @@ def serve() -> None:
     settings: AppSettings = load_app_settings(AppSettings, None)
 
     configure_logging(settings.logging)
-
 
     application = create_app(settings)
 

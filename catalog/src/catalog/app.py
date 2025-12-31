@@ -9,13 +9,12 @@ from typing import Final
 import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 import uvicorn
-from fastapi import APIRouter, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse
-
 from core import configure_logging
 from core.cmd_utils import load_app_settings
 from core.settings import CoreSettings
+from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 
 LOGGER: Final = structlog.get_logger(__name__)
 

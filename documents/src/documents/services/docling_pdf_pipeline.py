@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Mapping, Sequence
+from typing import Any
 
+import structlog
 from docling.backend.docling_parse_v4_backend import DoclingParseV4DocumentBackend
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, FormatOption
 from docling.pipeline.standard_pdf_pipeline import StandardPdfPipeline
-
-import structlog
 from llama_index.core.extractors import SummaryExtractor
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import MetadataMode, TextNode
@@ -87,11 +87,7 @@ class DoclingPdfPipeline:
         )
         nodes = pipeline.run(documents=documents)
 
-        return [
-            self._build_chunk(node)
-            for node in nodes
-            if isinstance(node, TextNode)
-        ]
+        return [self._build_chunk(node) for node in nodes if isinstance(node, TextNode)]
 
     def _load_docling_documents(self, pdf_path: Path, *, include_images: bool) -> Iterable[Any]:
         converter = DocumentConverter(
@@ -162,7 +158,7 @@ class DoclingPdfPipeline:
 
         for entry in iter_image_entries(image_entries):
             for key in ("path", "image_path", "file_path", "uri"):
-                if (candidate := entry.get(key)):
+                if candidate := entry.get(key):
                     image_paths.append(str(candidate))
                     break
 

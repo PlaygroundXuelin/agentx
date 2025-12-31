@@ -7,9 +7,8 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-
 from core.cmd_utils import load_app_settings
+from fastapi.testclient import TestClient
 
 from datasets.app import AppSettings, create_app
 
@@ -29,11 +28,7 @@ def test_app_settings_defaults() -> None:
 
 def test_load_app_settings_with_env(tmp_path: Path) -> None:
     config_path = (
-        Path(__file__).resolve().parent.parent
-        / "src"
-        / "datasets"
-        / "configs"
-        / "local.yaml"
+        Path(__file__).resolve().parent.parent / "src" / "datasets" / "configs" / "local.yaml"
     )
 
     env_path = tmp_path / "local.env"
@@ -55,13 +50,7 @@ def test_load_app_settings_with_env(tmp_path: Path) -> None:
 
 @pytest.fixture()
 def default_config_path() -> Path:
-    return (
-        Path(__file__).resolve().parent.parent
-        / "src"
-        / "datasets"
-        / "configs"
-        / "local.yaml"
-    )
+    return Path(__file__).resolve().parent.parent / "src" / "datasets" / "configs" / "local.yaml"
 
 
 @pytest.fixture()

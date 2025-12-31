@@ -5,10 +5,10 @@ from collections.abc import Iterable, Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from documents.app import create_app
 from documents.dependencies import get_document_index_service
 from documents.schemas import DocumentPayload, SearchResult
 from documents.services.indexing_service import DocumentIndexNotReadyError
-from documents.app import create_app
 
 
 class FakeDocumentIndexService:

@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 import threading
 import time
+from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID
 
 import pydantic.dataclasses as pydantic_dataclasses
@@ -19,6 +20,7 @@ class FsSettings:
     """
     file system store settings
     """
+
     # root of datasets files in the file system
     root: str = "/tmp/_datasets"
 
@@ -108,7 +110,9 @@ class FsStore:
             self._update_data_symlink(dataset_id, version_path)
             return version_path
 
-    def fetch_data(self, dataset_id: UUID, *, as_text: bool = False, encoding: str = "utf-8") -> bytes | str:
+    def fetch_data(
+        self, dataset_id: UUID, *, as_text: bool = False, encoding: str = "utf-8"
+    ) -> bytes | str:
         """Read dataset content from the filesystem."""
 
         data_path = self._data_symlink_path(dataset_id)
@@ -215,10 +219,7 @@ class FsStore:
             return dict(metadata)
         if is_dataclass(metadata):
             return asdict(metadata)
-        msg = (
-            "metadata must be a mapping or dataclass instance; "
-            f"got {type(metadata).__name__}"
-        )
+        msg = f"metadata must be a mapping or dataclass instance; got {type(metadata).__name__}"
         raise TypeError(msg)
 
     def _read_metadata(self, dataset_id: UUID) -> dict[str, Any]:

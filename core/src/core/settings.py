@@ -19,7 +19,7 @@ from core.logging import LoggingSettings
 class CoreSettings:
     """Global settings."""
 
-    logging: LoggingSettings=LoggingSettings()
+    logging: LoggingSettings = LoggingSettings()
 
     # LLM settings
     llm: str = ""
@@ -27,9 +27,9 @@ class CoreSettings:
     openai_api_key: str = ""
 
     # common app settings
-    title="",
-    description="",
-    version="",
+    title = ("",)
+    description = ("",)
+    version = ("",)
 
 
 T = TypeVar("T")
@@ -115,12 +115,16 @@ def _resolve_field_value(  # noqa: PLR0913 - keep signature explicit for readabi
     if is_dataclass(base_type):
         mapping_value = _ensure_mapping(value, current_path)
         nested_type_hints = get_type_hints(base_type, include_extras=True)
-        return _build_dataclass(base_type, mapping_value, nested_type_hints, current_path)
+        return _build_dataclass(
+            base_type, mapping_value, nested_type_hints, current_path
+        )
 
     resolved_value = value
     env_var_name = _to_env_var(current_path)
 
-    if resolved_value is MISSING or (_is_string_type(base_type) and resolved_value == ""):
+    if resolved_value is MISSING or (
+        _is_string_type(base_type) and resolved_value == ""
+    ):
         env_value = os.getenv(env_var_name)
         if env_value is not None:
             return _convert_value(env_value, base_type)
@@ -128,7 +132,9 @@ def _resolve_field_value(  # noqa: PLR0913 - keep signature explicit for readabi
         if resolved_value is MISSING:
             return _fallback_default(field, allows_none, current_path, env_var_name)
 
-        return _handle_empty_string_fallback(field, allows_none, current_path, env_var_name)
+        return _handle_empty_string_fallback(
+            field, allows_none, current_path, env_var_name
+        )
 
     if resolved_value is None:
         if allows_none:
@@ -140,7 +146,9 @@ def _resolve_field_value(  # noqa: PLR0913 - keep signature explicit for readabi
     return _convert_value(resolved_value, base_type)
 
 
-def _fallback_default(field, allows_none: bool, path: list[str], env_var_name: str) -> Any:
+def _fallback_default(
+    field, allows_none: bool, path: list[str], env_var_name: str
+) -> Any:
     if field.default is not MISSING:
         return field.default
     if field.default_factory is not MISSING:  # type: ignore[attr-defined]

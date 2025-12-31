@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-import pydantic.dataclasses as pydantic_dataclasses
+import asyncio
 import dataclasses
-import structlog
 from typing import Final, TypeVar
 
-from fastapi import FastAPI
-import asyncio
+import pydantic.dataclasses as pydantic_dataclasses
+import structlog
 import uvicorn
-
 from core import configure_logging, configure_tracing
 from core.cmd_utils import load_app_settings
 from core.settings import CoreSettings
+from fastapi import FastAPI
 
 from documents.dependencies import configure_document_dependencies
 from documents.routers.indexing import create_indexing_router

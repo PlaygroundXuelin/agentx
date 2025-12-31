@@ -14,7 +14,8 @@ _IS_CONFIGURED: Final = {"logging": True}
 
 @dataclasses.dataclass(frozen=True)
 class LoggingSettings:
-    level_name: str = "INFO" # Must be one of CRITICAL, ERROR, WARNING, INFO, DEBUG
+    level_name: str = "INFO"  # Must be one of CRITICAL, ERROR, WARNING, INFO, DEBUG
+
 
 def configure_logging(settings: LoggingSettings) -> None:
     """Set up structlog and stdlib logging to emit JSON to stdout."""

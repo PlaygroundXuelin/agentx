@@ -2,23 +2,23 @@
 
 from __future__ import annotations
 
-import pydantic.dataclasses as pydantic_dataclasses
-
 from functools import lru_cache
 from pathlib import Path
 from typing import Final
 from uuid import uuid4
 
+import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 from fastapi import UploadFile
+from llama_index.llms.openai import OpenAI
 
 from documents.schemas import DocumentPayload
 from documents.services.docling_pdf_pipeline import DoclingPdfPipeline, PdfChunk
 from documents.services.indexing_service import DocumentIndexService
 from documents.services.settings import DocumentSettings
-from llama_index.llms.openai import OpenAI
 
 LOGGER: Final = structlog.get_logger(__name__)
+
 
 @pydantic_dataclasses.dataclass(frozen=True)
 class DocumentsStore:
@@ -33,12 +33,11 @@ class DocumentsStore:
 
         return Path(self.settings.store.settings.path)
 
-
     async def persist_pdf_upload(
-            self,
-            upload: UploadFile,
-            *,
-            document_id: str | None = None,
+        self,
+        upload: UploadFile,
+        *,
+        document_id: str | None = None,
     ) -> tuple[str, Path]:
         """Persist the uploaded PDF to disk and return its document id and path."""
 

@@ -1,12 +1,11 @@
 """Dependency providers for the documents service."""
 
 from functools import lru_cache
-from typing import Optional
 
 from documents.services.indexing_service import DocumentIndexService
 from documents.services.settings import DocumentSettings
 
-_DOCUMENT_SETTINGS: Optional[DocumentSettings] = None
+_DOCUMENT_SETTINGS: DocumentSettings | None = None
 
 
 def configure_document_dependencies(settings: DocumentSettings) -> None:

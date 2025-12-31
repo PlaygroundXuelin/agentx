@@ -12,6 +12,9 @@ import httpx
 import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 import uvicorn
+from core import configure_logging
+from core.cmd_utils import load_app_settings
+from core.settings import CoreSettings
 from fastapi import (
     APIRouter,
     FastAPI,
@@ -25,9 +28,6 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, ORJSONResponse
 
-from core import configure_logging
-from core.cmd_utils import load_app_settings
-from core.settings import CoreSettings
 from datasets.FsStore import FsSettings, FsStore
 from datasets.schemas import (
     StoreMetadataRequest,
@@ -129,10 +129,7 @@ def register_routes(app: FastAPI, settings: AppSettings, store: FsStore) -> None
             except httpx.HTTPStatusError as exc:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail=(
-                        "Catalog ping failed with status "
-                        f"{exc.response.status_code}."
-                    ),
+                    detail=(f"Catalog ping failed with status {exc.response.status_code}."),
                 ) from exc
             except httpx.HTTPError as exc:
                 raise HTTPException(

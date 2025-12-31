@@ -1,6 +1,5 @@
 import argparse
-import os
-from dataclasses import MISSING, dataclass, fields, is_dataclass
+from dataclasses import is_dataclass
 from pathlib import Path
 from typing import Final, Sequence, TypeVar
 
@@ -47,14 +46,17 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def _load_app_settings(
-        dataclass_type: type[T],
-        config_path: str | Path,
-        env_path: str | Path | None = None,
+    dataclass_type: type[T],
+    config_path: str | Path,
+    env_path: str | Path | None = None,
 ) -> T:
     """Hydrate application settings from YAML and environment variables."""
 
-    LOGGER.debug("Loading application settings from YAML",
-                 config_path=config_path, env_path=env_path)
+    LOGGER.debug(
+        "Loading application settings from YAML",
+        config_path=config_path,
+        env_path=env_path,
+    )
 
     if env_path is not None:
         env_path = Path(env_path).expanduser()
@@ -72,17 +74,17 @@ def _load_app_settings(
 
 
 def load_app_settings(
-        dataclass_type: type[T],
-        argv: Sequence[str] | None = None,
+    dataclass_type: type[T],
+    argv: Sequence[str] | None = None,
 ) -> T:
     """Convenience helper for constructing the API app."""
 
     args = _parse_args(argv)
 
-    LOGGER.debug("parsed args",
-                 args = args,
-                 argv = argv)
+    LOGGER.debug("parsed args", args=args, argv=argv)
     if not is_dataclass(dataclass_type):
         msg = f"Expected a dataclass type, got {dataclass_type!r}"
         raise TypeError(msg)
-    return _load_app_settings(dataclass_type, config_path=args.config, env_path=args.env)
+    return _load_app_settings(
+        dataclass_type, config_path=args.config, env_path=args.env
+    )

@@ -16,7 +16,7 @@ from fastapi import (
 from documents.dependencies import get_document_index_service
 from documents.schemas import DocumentUploadResponse, IndexDocumentsRequest, IndexDocumentsResponse
 from documents.services.indexing_service import DocumentIndexService
-from documents.services.pdf_ingestion import process_pdf_for_indexing, DocumentsStore
+from documents.services.pdf_ingestion import DocumentsStore, process_pdf_for_indexing
 from documents.services.settings import DocumentSettings
 
 
@@ -39,7 +39,6 @@ def create_indexing_router(document_settings: DocumentSettings) -> APIRouter:
         indexed_count = service.index_documents(request.documents)
         return IndexDocumentsResponse(indexed_count=indexed_count)
 
-
     @router.post(
         "/index/pdf",
         response_model=DocumentUploadResponse,
@@ -61,7 +60,9 @@ def create_indexing_router(document_settings: DocumentSettings) -> APIRouter:
             )
 
         try:
-            resolved_id, file_path = await documents_store.persist_pdf_upload(file, document_id=document_id)
+            resolved_id, file_path = await documents_store.persist_pdf_upload(
+                file, document_id=document_id
+            )
         except ValueError as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
