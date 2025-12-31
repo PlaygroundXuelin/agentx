@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Repository Conventions
-- Python 3.12, uses .venv/bin/python; package manager: `uv`.
+- Python 3.14, uses .venv/bin/python; package manager: `uv`.
   - Activate virtual env
     `source .venv/bin/activate`
   - upate dependencies for a subprojectm using app_api as an example:

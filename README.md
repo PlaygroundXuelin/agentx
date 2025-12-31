@@ -24,7 +24,7 @@ chunks for a query
 Each subproject is an isolated Python package with its own `pyproject.toml` so you can install, test, and release them independently.
 
 ## Development Workflow
-- Python 3.12 with `uv` for dependency management (see `AGENTS.md` for conventions)
+- Python 3.14 with `uv` for dependency management (see `AGENTS.md` for conventions)
 - Format & lint with Ruff: `uvx ruff check --fix .` then `uvx ruff format .`
 - Run subproject-specific tasks from within each directory or orchestrate using your preferred tooling
 

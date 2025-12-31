@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "catalog"
 version = "0.1.0"
 description = "Catalog REST service for Agentic RAG"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 readme = "README.md"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 
@@ -69,4 +69,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.uv.sources]
-core = { path = "../core" }
+core = { workspace = true }
