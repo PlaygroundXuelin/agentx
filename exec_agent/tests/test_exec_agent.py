@@ -42,7 +42,7 @@ def test_load_app_settings_with_env(tmp_path: Path) -> None:
         os.environ.update(original_env)
 
     assert settings.service_name == "from-env"
-    assert settings.metadata == {"owner": "template-team"}
+    assert settings.metadata == {"owner": "exec_agent"}
 
 
 @pytest.fixture()

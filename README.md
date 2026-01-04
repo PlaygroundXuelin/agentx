@@ -3,6 +3,8 @@
 Polyrepo that hosts several focused subprojects working together to deliver an agentic retrieval-augmented system.
 
 ## Todo
+- exec_agent:
+  - call tools
 - synthetic data generation
 generate questions/expected answers from a document. and store it using datasets api.
 
@@ -15,6 +17,7 @@ chunks for a query
   - workflow: from query, determine whether call rag agent and/or data analysis agent
 - A datasets agent that search categories of existing datasets to find relevant datasets for a query.
 - A simple data analytics agent that takes a dataset and drive stats / plots for a query.
+
 ## Layout
 - `app_api/` – FastAPI service that exposes the orchestration layer
 - `core/` – Shared utilities (`agent_core`) reused by downstream agents
@@ -45,3 +48,7 @@ vllm serve Qwen/Qwen3-4B-AWQ \
   --kv-cache-dtype fp8_e4m3 \
   --enforce-eager
 ```
+
+## done/status
+- exec_agent:
+  - lite-llm to call model, model settings.

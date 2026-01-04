@@ -3,42 +3,25 @@
 from __future__ import annotations
 
 import asyncio
-import dataclasses
 from typing import Final
 
-import pydantic.dataclasses as pydantic_dataclasses
 import structlog
 import uvicorn
 from core.cmd_utils import load_app_settings
 from core.logging import configure_logging
-from core.settings import CoreSettings
-from fastapi import APIRouter, FastAPI
-from fastapi import HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
-from litellm import aresponses
 from pydantic import BaseModel, Field
 
+from exec_agent.agent.runner import AgentRunner, LiteLLMChatClient
+from exec_agent.infra.config import AppSettings
+from exec_agent.tools.executor import ToolExecutor
+from exec_agent.tools.impl.retrieve import RetrieveTool
+from exec_agent.tools.policies import ToolPolicy
+from exec_agent.tools.registry import ToolRegistry
+
 LOGGER: Final = structlog.get_logger(__name__)
-
-
-@pydantic_dataclasses.dataclass(frozen=True)
-class LlmSettings:
-    model: str = ""
-    timeout_seconds: int = 30
-    temperature: float = 0
-
-
-@pydantic_dataclasses.dataclass(frozen=True)
-class AppSettings(CoreSettings):
-    api_prefix: str = "/v1"
-    cors_origins: list[str] = dataclasses.field(default_factory=lambda: ["*"])
-    host: str = "0.0.0.0"
-    port: int = 8000
-    reload: bool = False
-    service_name: str = "exec_agent"
-    metadata: dict[str, str] = dataclasses.field(default_factory=dict)
-    llm: LlmSettings = LlmSettings()
 
 
 class QueryRequest(BaseModel):
@@ -47,6 +30,22 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     response: str
+
+
+def build_agent_runner(settings: AppSettings) -> AgentRunner:
+    registry = ToolRegistry()
+    enabled = set(settings.tools.enabled_tools)
+    if "retrieve" in enabled:
+        registry.register(RetrieveTool(settings.retrieval))
+
+    policy = ToolPolicy(allowed_tools=enabled, max_calls=settings.tools.max_calls)
+    executor = ToolExecutor(registry, policy)
+    client = LiteLLMChatClient(
+        model=settings.llm.model,
+        temperature=settings.llm.temperature,
+        timeout_seconds=settings.llm.timeout_seconds,
+    )
+    return AgentRunner(client=client, registry=registry, executor=executor)
 
 
 def create_app(settings: AppSettings) -> FastAPI:
@@ -67,6 +66,7 @@ def create_app(settings: AppSettings) -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.state.agent_runner = build_agent_runner(settings)
     register_routes(app, settings)
     return app
 
@@ -87,57 +87,19 @@ def register_routes(app: FastAPI, settings: AppSettings) -> None:
             "service": settings.service_name or "exec_agent",
         }
 
-    def extract_response_text(response: object) -> str:
-        if isinstance(response, dict):
-            output = response.get("output")
-        else:
-            output = getattr(response, "output", None)
-        if not output:
-            return ""
-
-        parts: list[str] = []
-        for item in output:
-            if isinstance(item, dict):
-                content = item.get("content")
-            else:
-                content = getattr(item, "content", None)
-            if not content:
-                continue
-            for chunk in content:
-                if isinstance(chunk, dict):
-                    chunk_type = chunk.get("type")
-                else:
-                    chunk_type = getattr(chunk, "type", None)
-                if chunk_type == "output_text":
-                    text = chunk.get("text") if isinstance(chunk, dict) else getattr(chunk, "text", "")
-                elif isinstance(chunk, dict):
-                    text = chunk.get("text", "")
-                else:
-                    text = getattr(chunk, "text", "")
-                if text:
-                    parts.append(str(text))
-
-        return "".join(parts).strip()
-
     @router.post("/query", response_model=QueryResponse)
     async def query(payload: QueryRequest) -> QueryResponse:
         try:
-            completion = await aresponses(
-                input=payload.user_input,
-                model=settings.llm.model,
-                temperature=settings.llm.temperature,
-                timeout=settings.llm.timeout_seconds,
-            )
+            runner: AgentRunner = app.state.agent_runner
+            result = await runner.run(payload.user_input)
         except Exception as exc:
             LOGGER.exception("exec_agent.query_failed", error=str(exc))
             raise HTTPException(status_code=502, detail="Model request failed") from exc
 
-        response_text = extract_response_text(completion)
-
-        if not response_text:
+        if not result.output:
             raise HTTPException(status_code=502, detail="Model response empty")
 
-        return QueryResponse(response=response_text)
+        return QueryResponse(response=result.output)
 
     app.include_router(router)
 
