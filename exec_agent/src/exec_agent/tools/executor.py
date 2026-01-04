@@ -53,7 +53,20 @@ class ToolExecutor:
             call_count += 1
             with tool_span("tool.execute", tool_name=call.name):
                 try:
+                    LOGGER.debug(
+                        "tool.execute_start",
+                        tool=call.name,
+                        call_id=call.id,
+                        arguments=call.arguments,
+                        call_count=call_count,
+                    )
                     result = await tool.run(call.arguments)
+                    LOGGER.debug(
+                        "tool.execute_end",
+                        tool=call.name,
+                        call_id=call.id,
+                        ok=result.ok,
+                    )
                 except Exception as exc:  # pragma: no cover - defensive logging
                     LOGGER.exception("tool.execute_failed", tool=call.name, error=str(exc))
                     result = ToolResult.failure(call.name, "tool_execution_failed")

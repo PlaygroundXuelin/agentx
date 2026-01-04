@@ -1,13 +1,7 @@
-# App Template
-
-This subproject is a lightweight scaffold for building new rest services. It demonstrates
-how to load configuration from YAML and optional env files, bootstrap application-level logging, and
-expose a FastAPI application with a health check and sample router using the shared `core` utilities.
-
 ## Quickstart
 
 ```shell
-uv run --active -m app_template.app --config src/app_template/configs/local.yaml
+uv run --active -m exec_agent.app --config src/exec_agent/configs/local.yaml
 ```
 
 To provide additional environment variables, supply an env file:
@@ -18,7 +12,7 @@ uv run --active -m exec_agent.app \
   # --env src/exec_agent/configs/local.env # if there is an env file
   
 # health check
-curl http://localhost:9000/ 
+curl http://localhost:9000/ # exec_agent health check
 
 
 curl http://localhost:9000/v1/ping 
@@ -32,5 +26,5 @@ curl http://localhost:9000/v1/ping
 4. `uvx ruff format .`
 
 Adjust the `AppSettings` dataclass, extend `register_routes`, and enrich `create_app` in
-`app_template/app.py` as your service grows. The included test shows how to exercise the shared settings loader with custom
+`exec_agent/app.py` as your service grows. The included test shows how to exercise the shared settings loader with custom
 arguments.
