@@ -15,6 +15,7 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "orjson>=3.10.0",
     "python-dotenv>=1.0.1",
+    "litellm",
     "core",
 ]
 
