@@ -1,6 +1,6 @@
 # App Template
 
-This subproject is a lightweight scaffold for building new Agentic RAG REST services. It demonstrates
+This subproject is a lightweight scaffold for building new rest services. It demonstrates
 how to load configuration from YAML and optional env files, bootstrap application-level logging, and
 expose a FastAPI application with a health check and sample router using the shared `core` utilities.
 
