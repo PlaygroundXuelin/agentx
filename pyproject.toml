@@ -1,0 +1,11 @@
+[tool.uv.workspace]
+members = [
+    "app_api",
+    "catalog",
+    "core",
+    "data_gen",
+    "datasets",
+    "db",
+    "documents",
+    "eval",
+]
