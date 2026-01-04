@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "app_template"
+version = "0.1.0"
+description = "Template subproject for new Agentic RAG services"
+requires-python = ">=3.14"
+readme = "README.md"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+
+dependencies = [
+    "fastapi>=0.119.0",
+    "uvicorn[standard]>=0.30.0",
+    "orjson>=3.10.0",
+    "python-dotenv>=1.0.1",
+    "core",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27.0",
+    "ruff>=0.6.9",
+]
+
+[tool.uv]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["dist", "build", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "PGH",
+]
+ignore = [
+    "E203",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app_template"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = false
+
+[project.scripts]
+serve = "app_template.app:serve"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv.sources]
+core = { workspace = true }
