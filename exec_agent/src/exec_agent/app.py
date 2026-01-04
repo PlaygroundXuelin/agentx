@@ -1,4 +1,4 @@
-"""FastAPI service template for new Agentic RAG subprojects."""
+"""FastAPI service for new Agentic RAG subprojects."""
 
 from __future__ import annotations
 
@@ -21,19 +21,17 @@ LOGGER: Final = structlog.get_logger(__name__)
 
 @pydantic_dataclasses.dataclass(frozen=True)
 class AppSettings(CoreSettings):
-    """Settings shared by template-based services."""
-
     api_prefix: str = "/v1"
     cors_origins: list[str] = dataclasses.field(default_factory=lambda: ["*"])
     host: str = "0.0.0.0"
     port: int = 8000
     reload: bool = False
-    service_name: str = "app-template"
+    service_name: str = "exec_agent"
     metadata: dict[str, str] = dataclasses.field(default_factory=dict)
 
 
 def create_app(settings: AppSettings) -> FastAPI:
-    """Instantiate a FastAPI application configured with template defaults."""
+    """Instantiate a FastAPI application configured with defaults."""
 
     app = FastAPI(
         title=settings.title or "App Template",
@@ -55,19 +53,19 @@ def create_app(settings: AppSettings) -> FastAPI:
 
 
 def register_routes(app: FastAPI, settings: AppSettings) -> None:
-    """Attach template routes that demonstrate the service layout."""
+    """Attach routes that demonstrate the service layout."""
 
     @app.get("/", include_in_schema=False)
     def healthcheck() -> dict[str, str]:
         return {"status": "ok"}
 
-    router = APIRouter(prefix=settings.api_prefix, tags=["template"])
+    router = APIRouter(prefix=settings.api_prefix, tags=["exec_agent"])
 
     @router.get("/ping")
     def ping() -> dict[str, str]:
         return {
             "message": "pong",
-            "service": settings.service_name or "app-template",
+            "service": settings.service_name or "exec_agent",
         }
 
     app.include_router(router)
@@ -82,7 +80,7 @@ def serve() -> None:
     application = create_app(settings)
 
     LOGGER.info(
-        "app_template.startup",
+        "exec_agent.startup",
         host=settings.host,
         port=settings.port,
         service_name=settings.service_name,

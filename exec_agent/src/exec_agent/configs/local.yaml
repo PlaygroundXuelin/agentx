@@ -1,7 +1,7 @@
 logging:
   level_name: "DEBUG"
 
-title: "App Template"
+title: "Exec Agent"
 description: ""
 version: "0.1.0"
 
@@ -12,4 +12,4 @@ api_prefix: "/v1"
 cors_origins: ["*"]
 service_name: ""
 metadata:
-  owner: "template-team"
+  owner: "agentx"

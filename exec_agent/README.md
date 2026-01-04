@@ -13,9 +13,9 @@ uv run --active -m app_template.app --config src/app_template/configs/local.yaml
 To provide additional environment variables, supply an env file:
 
 ```shell
-uv run --active -m app_template.app \
-  --config src/app_template/configs/local.yaml \
-  --env src/app_template/configs/local.env
+uv run --active -m exec_agent.app \
+  --config src/exec_agent/configs/local.yaml \
+  # --env src/exec_agent/configs/local.env # if there is an env file
   
 # health check
 curl http://localhost:9000/ 
