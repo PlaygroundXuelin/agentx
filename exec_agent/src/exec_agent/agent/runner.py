@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import structlog
-from litellm import aresponses
+from litellm import acompletion, aresponses
 
 from exec_agent.agent.types import AgentResult, ChatMessage, ModelResponse, ToolCall
 from exec_agent.tools.base import ToolSpec
@@ -69,9 +69,9 @@ def _extract_response_payload(response: Any) -> tuple[str, list[ToolCall]]:
             for chunk in content:
                 chunk_type = _get_attr(chunk, "type", "")
                 if chunk_type in {"output_text", "text"}:
-                    text = _get_attr(chunk, "text", "")
-                    if text:
-                        text_parts.append(str(text))
+                    text_parts.extend(_coerce_text_chunks(_get_attr(chunk, "text", None) or chunk))
+                else:
+                    text_parts.extend(_coerce_text_chunks(chunk))
             raw_tool_calls = _get_attr(item, "tool_calls", None)
             if raw_tool_calls:
                 tool_calls.extend(_parse_tool_calls(raw_tool_calls))
@@ -116,9 +116,21 @@ def _coerce_text_chunks(value: Any) -> list[str]:
         return [value] if value else []
     if isinstance(value, dict):
         text = value.get("text")
-        return [str(text)] if text else []
+        if isinstance(text, dict):
+            text = text.get("value") or text.get("text")
+        if text:
+            return [str(text)]
+        direct = value.get("value")
+        if direct:
+            return [str(direct)]
+        content = value.get("content")
+        if content:
+            return _coerce_text_chunks(content)
+        return []
     if hasattr(value, "text"):
         text = value.text
+        if isinstance(text, dict):
+            text = text.get("value") or text.get("text")
         return [str(text)] if text else []
     if isinstance(value, list):
         chunks: list[str] = []
@@ -136,8 +148,11 @@ def _summarize_response(response: Any) -> dict[str, Any]:
     output = _get_attr(response, "output", None)
     output_len = len(output) if isinstance(output, list) else None
     output_types = None
+    output_preview = None
     if isinstance(output, list):
         output_types = [type(item).__name__ for item in output]
+        if output:
+            output_preview = _preview_value(output[0])
     text_value = _get_attr(response, "text", None)
     text_keys = list(text_value.keys()) if isinstance(text_value, dict) else None
     return {
@@ -145,11 +160,47 @@ def _summarize_response(response: Any) -> dict[str, Any]:
         "has_output": output is not None,
         "output_len": output_len,
         "output_types": output_types,
+        "output_preview": output_preview,
         "has_output_text": bool(_get_attr(response, "output_text", None)),
         "has_text": bool(_get_attr(response, "text", None)),
         "text_type": type(_get_attr(response, "text", None)).__name__,
         "text_keys": text_keys,
         "has_choices": bool(_get_attr(response, "choices", None)),
+    }
+
+
+def _preview_value(value: Any, limit: int = 800) -> str:
+    data = value
+    if hasattr(value, "model_dump"):
+        try:
+            data = value.model_dump()
+        except Exception:
+            data = value
+    elif hasattr(value, "dict"):
+        try:
+            data = value.dict()
+        except Exception:
+            data = value
+    elif hasattr(value, "__dict__"):
+        data = value.__dict__
+
+    try:
+        text = json.dumps(data, ensure_ascii=True, default=str)
+    except TypeError:
+        text = repr(data)
+    if len(text) > limit:
+        return f"{text[:limit]}..."
+    return text
+
+
+def _to_chat_tool_spec(tool: ToolSpec) -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": tool.input_schema,
+        },
     }
 
 
@@ -177,7 +228,30 @@ class LiteLLMChatClient:
         response = await aresponses(**payload)
         text, tool_calls = _extract_response_payload(response)
         if not text and not tool_calls:
-            LOGGER.debug("llm.empty_response", summary=_summarize_response(response))
+            LOGGER.debug(
+                "llm.empty_response",
+                summary=_summarize_response(response),
+                model=self.model,
+                fallback="acompletion",
+            )
+            completion_payload = {
+                "model": self.model,
+                "temperature": self.temperature,
+                "timeout": self.timeout_seconds,
+                "messages": [message.to_openai() for message in messages],
+            }
+            if tools:
+                completion_payload["tools"] = [_to_chat_tool_spec(tool) for tool in tools]
+                completion_payload["tool_choice"] = "auto"
+            response = await acompletion(**completion_payload)
+            text, tool_calls = _extract_response_payload(response)
+            if not text and not tool_calls:
+                LOGGER.debug(
+                    "llm.empty_response",
+                    summary=_summarize_response(response),
+                    model=self.model,
+                    fallback="none",
+                )
         return ModelResponse(text=text, tool_calls=tool_calls, raw=response)
 
 

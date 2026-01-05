@@ -47,9 +47,7 @@ def test_load_app_settings_with_env(tmp_path: Path) -> None:
 
 @pytest.fixture()
 def default_config_path() -> Path:
-    return (
-        Path(__file__).resolve().parent.parent / "src" / "exec_agent" / "configs" / "local.yaml"
-    )
+    return Path(__file__).resolve().parent.parent / "src" / "exec_agent" / "configs" / "local.yaml"
 
 
 @pytest.fixture()

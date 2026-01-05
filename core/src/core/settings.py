@@ -22,9 +22,9 @@ class CoreSettings:
     logging: LoggingSettings = LoggingSettings()
 
     # LLM settings
-    llm: str = ""
     embed_model: str = ""
     openai_api_key: str = ""
+    gemini_api_key: str = ""
 
     # common app settings
     title = ("",)

@@ -12,7 +12,7 @@ uv run --active -m exec_agent.app \
   # --env src/exec_agent/configs/local.env # if there is an env file
   
 # health check
-curl http://localhost:9000/ # exec_agent health check
+curl http://localhost:9000/ #hack for search gpt: exec_agent health check gemini: health check exec_agent service
 
 
 curl http://localhost:9000/v1/ping 

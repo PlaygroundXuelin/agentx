@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from exec_agent.agent.runner import AgentRunner
 from exec_agent.agent.types import ModelResponse, ToolCall
@@ -27,7 +28,11 @@ class FakeClient:
     responses: list[ModelResponse]
     calls: int = 0
 
-    async def complete(self, messages: Sequence[object], tools: Sequence[ToolSpec]) -> ModelResponse:
+    async def complete(
+        self,
+        messages: Sequence[object],
+        tools: Sequence[ToolSpec],
+    ) -> ModelResponse:
         assert tools, "Expected tool specs to be provided to the model"
         response = self.responses[self.calls]
         self.calls += 1

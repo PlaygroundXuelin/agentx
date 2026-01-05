@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import math
+import re
 from typing import Final
 
+import litellm
 import structlog
 import uvicorn
 from core.cmd_utils import load_app_settings
@@ -92,6 +95,10 @@ def register_routes(app: FastAPI, settings: AppSettings) -> None:
         try:
             runner: AgentRunner = app.state.agent_runner
             result = await runner.run(payload.user_input)
+        except litellm.RateLimitError as exc:
+            LOGGER.warning("exec_agent.rate_limited", error=str(exc))
+            detail, headers = _rate_limit_response(exc)
+            raise HTTPException(status_code=429, detail=detail, headers=headers) from exc
         except Exception as exc:
             LOGGER.exception("exec_agent.query_failed", error=str(exc))
             raise HTTPException(status_code=502, detail="Model request failed") from exc
@@ -128,6 +135,26 @@ def serve() -> None:
     )
     server = uvicorn.Server(config=config)
     asyncio.run(server.serve())
+
+
+def _rate_limit_response(exc: Exception) -> tuple[str, dict[str, str]]:
+    detail = "Model rate limit exceeded. Please retry later."
+    headers: dict[str, str] = {}
+    retry_after = _extract_retry_after_seconds(str(exc))
+    if retry_after is not None:
+        detail = f"{detail} Retry after {retry_after} seconds."
+        headers["Retry-After"] = str(retry_after)
+    return detail, headers
+
+
+def _extract_retry_after_seconds(message: str) -> int | None:
+    match = re.search(r'"retryDelay"\\s*:\\s*"([0-9.]+)s"', message)
+    if not match:
+        return None
+    try:
+        return int(math.ceil(float(match.group(1))))
+    except ValueError:
+        return None
 
 
 if __name__ == "__main__":  # pragma: no cover - import-time guard
